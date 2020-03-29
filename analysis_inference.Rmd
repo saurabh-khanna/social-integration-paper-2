@@ -1,0 +1,42 @@
+---
+title: "Analysis for SN Paper 2 - Inference"
+author: "Saurabh Khanna"
+date: "`r Sys.Date()`"
+output: 
+  github_document:
+    toc: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r message=FALSE, warning=FALSE}
+# Libraries
+library(tidyverse)
+library(haven)
+library(stargazer)
+library(plm)
+library(sandwich)
+library(lmtest)
+
+# Parameters
+data_file <- here::here("data/stu_admin_all_with_netvars.Rds")
+```
+
+
+Read main data file:
+
+```{r}
+df <-
+  data_file %>%
+  read_rds()
+```
+
+
+Student fixed effects:
+
+```{r}
+
+```
+

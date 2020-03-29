@@ -1,7 +1,7 @@
 data/
 *.dta
 *.csv
-*.Rmd
+*.Rds
 report/
 .Rproj.user
 .Rproj.user/
