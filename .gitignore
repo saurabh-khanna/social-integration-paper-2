@@ -1,0 +1,7 @@
+data/
+*.dta
+*.csv
+*.Rmd
+report/
+.Rproj.user
+.Rproj.user/
