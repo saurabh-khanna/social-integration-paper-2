@@ -1,5 +1,5 @@
 ---
-title: "Analysis for SN Paper 2 - Inference"
+title: "Analysis for SN Paper 2"
 author: "Saurabh Khanna"
 date: "`r Sys.Date()`"
 output: 
@@ -19,6 +19,7 @@ library(stargazer)
 library(plm)
 library(sandwich)
 library(lmtest)
+library(AER)
 
 # Parameters
 data_file <- here::here("data/stu_admin_all_with_netvars.Rds")
@@ -34,9 +35,25 @@ df <-
 ```
 
 
-Student fixed effects:
+Reservation students:
 
 ```{r}
-
+df %>%
+  filter(stu_merge == 3) %>% 
+  mutate(
+    age = 2017 - lubridate::year(b_birthdate)
+  ) %>% 
+  filter(reservation == "Reservation") %>%
+  # lm(
+  #   e_seg_studymate ~ 
+  #     ea_seats_reserved_students_sc + ea_seats_reserved_students_st + ea_seats_reserved_students_obc,
+  #   data = .
+  # ) %>% 
+  ivreg(
+    e_ql_score_perc ~ e_seg_studymate + b_ql_score_perc + gender + age |
+    ea_seats_reserved_students_sc + ea_seats_reserved_students_st + ea_seats_reserved_students_obc + b_ql_score_perc + gender + age,
+    data = .
+  ) %>%
+  coeftest(vcov = vcovHC, type = "HC1")
 ```
 
