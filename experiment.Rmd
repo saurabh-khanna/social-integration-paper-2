@@ -1,0 +1,244 @@
+---
+title: "Analysis for SN Paper 2 - Experiment"
+author: "Saurabh Khanna"
+date: "`r Sys.Date()`"
+output: 
+  github_document:
+    toc: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, fig.retina = 4)
+```
+
+```{r message=FALSE, warning=FALSE}
+# Libraries
+pacman::p_load(tidyverse, haven, AER, stargazer, sandwich, lmtest, estimatr, extrafont, texreg)
+extrafont::loadfonts()
+
+# Parameters
+stufac_file <- here::here("data", "all_appended.dta")
+stu_file <- here::here("data", "stu_admin_all_latest.dta")
+newscores_file <- here::here("data/newscores.Rds")
+```
+
+
+## Read in data
+
+```{r}
+df_stu <- 
+  read_dta(stu_file) %>%
+  mutate(
+    reservation = dplyr::recode(reservation, "Non-reservation" = 0L, "Reservation" = 1L, .default = NA_integer_)
+  )
+
+df <- 
+  read_dta(stufac_file) %>%
+  distinct(stdid, course_name, .keep_all = T) %>% 
+  left_join(
+    df_stu %>% 
+      select(stdid, classid, reservation, ea_stud_group_criteria, grade),
+    by = "stdid"
+  ) %>% 
+  left_join(read_dta(here::here("data/res_fac_all.dta")), by = "facid") %>% 
+  filter(ea_stud_group_criteria == 2, grade == 2) %>% 
+  drop_na(reservation)
+
+df %>% filter(ea_stud_group_criteria == 2, grade == 2) %>% distinct(stdid)
+```
+
+
+## Assigning sections
+
+```{r, message=F}
+sections <-
+  df %>%
+  group_by(classid, course_name, facid) %>% 
+  summarise(
+    stu_res_section = mean(reservation, na.rm = TRUE),
+    n_stu = n()
+  ) %>%
+  ungroup() %>% 
+  filter(n_stu > 1)
+
+
+seg_scores <-
+  df %>% 
+  left_join(sections, by = c("classid", "course_name", "facid")) %>% 
+  mutate(
+    fac_diversity = if_else(reservation == reservation_fac, 0, 1),
+    stu_diversity = if_else(reservation == 0, stu_res_section, 1 - stu_res_section)
+  ) %>%
+  group_by(stdid, reservation) %>% 
+  summarize(
+    fac_diversity = sum(fac_diversity * credits, na.rm = TRUE) / sum(credits, na.rm = TRUE),
+    stu_diversity = sum(stu_diversity * credits, na.rm = TRUE) / sum(credits, na.rm = TRUE)
+  ) %>%
+  ungroup() %>% 
+  left_join(read_rds(newscores_file), by = "stdid") %>%
+  left_join(df_stu %>% select(stdid, classid, elite, grade, contains("score_perc")), by = "stdid") %>% 
+  left_join(read_dta("data/controls.dta"), by = "stdid") %>% 
+  mutate(
+    father_college = if_else(father_ed_ind > 3 & !is.na(father_ed_ind), 1L, 0L),
+    father_college = if_else(is.na(father_ed_ind), NA_integer_, father_college),
+    mother_college = if_else(mother_ed_ind > 3 & !is.na(mother_ed_ind), 1L, 0L),
+    mother_college = if_else(is.na(mother_ed_ind), NA_integer_, mother_college),
+    ses = ses %>% as.integer(),
+    univcode = str_sub(classid, 1, 5)
+  ) %>% 
+  mutate_at(
+    vars("e_seg_new", "b_seg_new", "stu_diversity", "fac_diversity", contains("score_perc")),
+    ~ scale(.) %>% as.vector
+  ) %>% 
+  janitor::remove_empty()
+
+seg_scores %>% summary()
+```
+
+
+```{r}
+# extracting data frame for stata comparisons
+# seg_scores %>% write_dta("data/seg_scores.dta", version = 13)
+```
+
+
+## Randomization checks
+
+```{r}
+# Check 1
+lm1 <-
+  seg_scores %>% 
+  lm_robust(b_seg_new ~ female + age + ses + hs_private + mother_college + father_college, data = ., fixed_effects = ~ classid, clusters = classid, se_type = "stata")
+
+summary(lm1)
+tidy(lm1) %>% select(term, estimate, p.value) %>% mutate_at(vars(estimate, p.value), ~ round(., digits = 2))
+```
+
+
+
+## Table 1 (All)
+
+```{r, results = "asis"}
+lm1 <-
+  seg_scores %>%
+  filter(reservation == 1) %>% 
+  lm_robust(e_ct_score_perc ~ b_seg_new + female + age + ses + hs_private + mother_college + father_college, data = ., fixed_effects = ~ classid, clusters = classid, se_type = "stata")
+
+lm2 <-
+  seg_scores %>%
+  filter(reservation == 0) %>% 
+  lm_robust(e_ct_score_perc ~ b_seg_new + female + age + ses + hs_private + mother_college + father_college, data = ., fixed_effects = ~ classid, clusters = classid, se_type = "stata")
+
+lm7 <-
+  seg_scores %>%
+  filter(reservation == 1) %>% 
+  lm_robust(e_math_g3_score_perc ~ b_seg_new + female + age + ses + hs_private + mother_college + father_college, data = ., fixed_effects = ~ classid, clusters = classid, se_type = "stata")
+
+lm8 <-
+  seg_scores %>%
+  filter(reservation == 0) %>% 
+  lm_robust(e_math_g3_score_perc ~ b_seg_new + female + age + ses + hs_private + mother_college + father_college, data = ., fixed_effects = ~ classid, clusters = classid, se_type = "stata")
+
+lm9 <-
+  seg_scores %>%
+  filter(reservation == 1) %>% 
+  lm_robust(e_physics_g3_score_perc ~ b_seg_new + female + age + ses + hs_private + mother_college + father_college, data = ., fixed_effects = ~ classid, clusters = classid, se_type = "stata")
+
+lm10 <-
+  seg_scores %>%
+  filter(reservation == 0) %>% 
+  lm_robust(e_physics_g3_score_perc ~ b_seg_new + female + age + ses + hs_private + mother_college + father_college, data = ., fixed_effects = ~ classid, clusters = classid, se_type = "stata")
+
+
+knitreg(list(lm1, lm2, lm7, lm8, lm9, lm10), custom.note = "%stars \n All models control for department fixed effects. \n Standard errors clustered at department level.", stars = c(0.01, 0.05, 0.1), include.ci = FALSE, custom.model.names = c("CT-Res", "CT-NRes", "Math-Res", "Math-NRes", "Physics-Res", "Physics-NRes"))
+```
+
+## Figures for non-linearity
+
+```{r, warning = F, message=F, fig.retina=4}
+seg_scores %>% 
+  mutate(
+    reservation = factor(reservation, labels = c("Non-reservation students", "Reservation students"))
+  ) %>%
+  ggplot(aes(b_seg_new, e_ct_score_perc)) +
+  geom_smooth(method = "loess") +
+  facet_wrap(vars(reservation)) +
+  hrbrthemes::theme_ipsum() +
+  labs(
+    x = "Segregation",
+    y = "Score",
+    caption = "All values reported in standard deviation units."
+  )
+
+seg_scores %>% 
+  mutate(
+    reservation = factor(reservation, labels = c("Non-reservation students", "Reservation students"))
+  ) %>%
+  ggplot(aes(fac_diversity, e_seg_new)) +
+  geom_smooth(method = "loess") +
+  facet_wrap(vars(reservation)) +
+  hrbrthemes::theme_ipsum() +
+  labs(
+    x = "Diversity of faculty",
+    y = "Segregation",
+    caption = "All values reported in standard deviation units."
+  )
+```
+
+
+
+## Mechanisms
+
+```{r, message = F, warning = F, fig.retina=4}
+lm1 <-
+  read_rds(here::here("data/stu_admin_all_with_netvars.Rds")) %>% 
+  select(stdid, contains("reciprocity"), contains("transitivity"), contains("homophily")) %>% 
+  mutate(
+    diff_reciprocity = (e_reciprocity - b_reciprocity) %>% scale() %>% as.vector(),
+    diff_transitivity = (e_transitivity - b_transitivity) %>% scale() %>% as.vector()
+  ) %>%
+  inner_join(seg_scores, by = "stdid") %>% 
+  lm_robust(diff_reciprocity ~ stu_diversity + female + score + age + hs_private + ses + father_college + b_seg_new, data = ., clusters = classid, se_type = "stata")
+
+lm2 <-
+  read_rds(here::here("data/stu_admin_all_with_netvars.Rds")) %>% 
+  select(stdid, contains("reciprocity"), contains("transitivity"), contains("homophily")) %>% 
+  mutate(
+    diff_reciprocity = (e_reciprocity - b_reciprocity) %>% scale() %>% as.vector(),
+    diff_transitivity = (e_transitivity - b_transitivity) %>% scale() %>% as.vector()
+  ) %>%
+  inner_join(seg_scores, by = "stdid") %>% 
+  lm_robust(diff_transitivity ~ stu_diversity + female + score + age + hs_private + ses + father_college + b_seg_new, data = ., clusters = classid, se_type = "stata")
+
+
+texreg::screenreg(list(lm1, lm2), custom.note = "%stars \n All models control for department-year fixed effects.", omit.coef = "(female)|(score)|(ther)|(area)|(ses)|(hstype)|(age)|(official)|(school)|(seg)", stars = c(0.01, 0.05, 0.1), include.ci = FALSE)
+
+```
+
+
+
+## Loop to check outliers causing imbalance
+
+```{r}
+# classids <- df %>% distinct(classid) %>% arrange(classid) %>% unlist()
+# results <- tibble()
+# 
+# for (class in classids) {
+#   print(str_c("Now at class: ", class))
+#   
+#   results <-
+#     bind_rows(
+#       results,
+#       seg_scores %>% 
+#         filter(classid == class) %>% 
+#         lm_robust(stu_diversity ~ female + score + mother_college + father_college + school_years_english, data = ., fixed_effects = ~ classid_new) %>%
+#         tidy() %>% 
+#         bind_cols(classid = class, .)
+#     )
+# }
+# 
+# results %>%
+#   filter(p.value < 0.05 & !is.na(p.value)) %>% 
+#   count(classid)
+```
+
