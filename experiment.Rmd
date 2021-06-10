@@ -120,55 +120,55 @@ tidy(lm1) %>% select(term, estimate, p.value) %>% mutate_at(vars(estimate, p.val
 lm1 <-
   seg_scores %>%
   filter(reservation == 1) %>% 
-  lm_robust(e_ct_score_perc ~ stu_diversity + b_ct_score_perc + female + age + ses + hs_private + mother_college + father_college, data = ., fixed_effects = ~ classid, clusters = classid, se_type = "stata")
+  lm_robust(e_ct_score_perc ~ stu_diversity + b_ct_score_perc + female + age + ses + hs_private + mother_college + father_college, data = ., fixed_effects = ~ classid, se_type = "stata")
 
 lm2 <-
   seg_scores %>%
   filter(reservation == 0) %>% 
-  lm_robust(e_ct_score_perc ~ stu_diversity + b_ct_score_perc + female + age + ses + hs_private + mother_college + father_college, data = ., fixed_effects = ~ classid, clusters = classid, se_type = "stata")
+  lm_robust(e_ct_score_perc ~ stu_diversity + b_ct_score_perc + female + age + ses + hs_private + mother_college + father_college, data = ., fixed_effects = ~ classid, se_type = "stata")
 
 lm3 <-
   seg_scores %>%
   filter(reservation == 1) %>% 
-  lm_robust(e_ql_score_perc ~ stu_diversity + b_ql_score_perc + female + age + ses + hs_private + mother_college + father_college, data = ., fixed_effects = ~ classid, clusters = classid, se_type = "stata")
+  lm_robust(e_ql_score_perc ~ stu_diversity + b_ql_score_perc + female + age + ses + hs_private + mother_college + father_college, data = ., fixed_effects = ~ classid, se_type = "stata")
 
 lm4 <-
   seg_scores %>%
   filter(reservation == 0) %>% 
-  lm_robust(e_ql_score_perc ~ stu_diversity + b_ql_score_perc + female + age + ses + hs_private + mother_college + father_college, data = ., fixed_effects = ~ classid, clusters = classid, se_type = "stata")
+  lm_robust(e_ql_score_perc ~ stu_diversity + b_ql_score_perc + female + age + ses + hs_private + mother_college + father_college, data = ., fixed_effects = ~ classid, se_type = "stata")
 
 lm5 <-
   seg_scores %>%
   filter(reservation == 1) %>% 
-  lm_robust(e_rr_score_perc ~ stu_diversity + b_rr_score_perc + female + age + ses + hs_private + mother_college + father_college, data = ., fixed_effects = ~ classid, clusters = classid, se_type = "stata")
+  lm_robust(e_rr_score_perc ~ stu_diversity + b_rr_score_perc + female + age + ses + hs_private + mother_college + father_college, data = ., fixed_effects = ~ classid, se_type = "stata")
 
 lm6 <-
   seg_scores %>%
   filter(reservation == 0) %>% 
-  lm_robust(e_rr_score_perc ~ stu_diversity + b_rr_score_perc + female + age + ses + hs_private + mother_college + father_college, data = ., fixed_effects = ~ classid, clusters = classid, se_type = "stata")
+  lm_robust(e_rr_score_perc ~ stu_diversity + b_rr_score_perc + female + age + ses + hs_private + mother_college + father_college, data = ., fixed_effects = ~ classid, se_type = "stata")
 
 lm7 <-
   seg_scores %>%
   filter(reservation == 1) %>% 
-  lm_robust(e_math_g3_score_perc ~ stu_diversity + b_math_g1_score_perc + female + age + ses + hs_private + mother_college + father_college, data = ., fixed_effects = ~ classid, clusters = classid, se_type = "stata")
+  lm_robust(e_math_g3_score_perc ~ stu_diversity + b_math_g1_score_perc + female + age + ses + hs_private + mother_college + father_college, data = ., fixed_effects = ~ classid, se_type = "stata")
 
 lm8 <-
   seg_scores %>%
   filter(reservation == 0) %>% 
-  lm_robust(e_math_g3_score_perc ~ stu_diversity + b_math_g1_score_perc + female + age + ses + hs_private + mother_college + father_college, data = ., fixed_effects = ~ classid, clusters = classid, se_type = "stata")
+  lm_robust(e_math_g3_score_perc ~ stu_diversity + b_math_g1_score_perc + female + age + ses + hs_private + mother_college + father_college, data = ., fixed_effects = ~ classid, se_type = "stata")
 
 lm9 <-
   seg_scores %>%
   filter(reservation == 1) %>% 
-  lm_robust(e_physics_g3_score_perc ~ stu_diversity + b_physics_g1_score_perc + female + age + ses + hs_private + mother_college + father_college, data = ., fixed_effects = ~ classid, clusters = classid, se_type = "stata")
+  lm_robust(e_physics_g3_score_perc ~ stu_diversity + b_physics_g1_score_perc + female + age + ses + hs_private + mother_college + father_college, data = ., fixed_effects = ~ classid, se_type = "stata")
 
 lm10 <-
   seg_scores %>%
   filter(reservation == 0) %>% 
-  lm_robust(e_physics_g3_score_perc ~ stu_diversity + b_physics_g1_score_perc + female + age + ses + hs_private + mother_college + father_college, data = ., fixed_effects = ~ classid, clusters = classid, se_type = "stata")
+  lm_robust(e_physics_g3_score_perc ~ stu_diversity + b_physics_g1_score_perc + female + age + ses + hs_private + mother_college + father_college, data = ., fixed_effects = ~ classid, se_type = "stata")
 
 
-knitreg(list(lm1, lm2, lm7, lm8, lm9, lm10), custom.note = "%stars \n All models control for department fixed effects. \n Standard errors clustered at department level.", stars = c(0.01, 0.05, 0.1), include.ci = FALSE, custom.model.names = c("CT-Res", "CT-NRes", "CT-Res", "CT-NRes", "CT-Res", "CT-NRes", "Math-Res", "Math-NRes", "Physics-Res", "Physics-NRes"))
+knitreg(list(lm1, lm2, lm3, lm4, lm5, lm6, lm7, lm8, lm9, lm10), custom.note = "%stars \n All models control for department fixed effects. \n Standard errors clustered at department level.", stars = c(0.01, 0.05, 0.1), include.ci = FALSE, custom.model.names = c("CT-Res", "CT-NRes", "QL-Res", "QL-NRes", "RR-Res", "RR-NRes", "Math-Res", "Math-NRes", "Physics-Res", "Physics-NRes"))
 ```
 
 ## Figures for non-linearity
